@@ -3,30 +3,37 @@ import os
 import sys
 import time
 import signal
+import serial
 
+# first in first out file in which the playback speed is requested
 fifo_file = "/tmp/mplayer.fifo"
-movie = sys.argv[1] # TODO movie list
+sound = sys.argv[1] # TODO generate name
 
+# allow a clean exit using ctrl+c
 def signal_handler(signal, frame):
     os.remove(fifo_file)
-    print '\nFIFO file removed.'
     os.system("killall mplayer")
-    print '\nmplayer killed.'
     sys.exit(0)
 
-signal.signal(signal.SIGINT, signal_handler)
-os.mkfifo(fifo_file)
+# assume that there is only 1 arduino connected:
+ser = serial.Serial('/dev/ttyACM0', 9600);
+ser.isOpen()
 
-command = "mplayer -slave -input file=" + fifo_file + " " # TODO use -fs for full screen
-os.system( command + movie + "&")
+if not os.path.exists(fifo_file):
+    os.mkfifo(fifo_file)
 
-step = 0.05
-speed = 1
+# generate the player command:
+command = "mplayer -af scaletempo -slave -input file=" + fifo_file + " "
+# and execute it with the sound argumend
+os.system( command + sound + "&")
+
+MAX_VAL=100.0
+
 while True:
-    print "\n => " + str(speed) + "\n"
+    speed = int(ser.readline()) / MAX_VAL
+    print " *** speed = ", speed, " ***\n"
+
     os.system("echo speed_set " + str(speed) + " > " + fifo_file)
-    if (speed <= 0.5): step = abs(step)
-    elif (speed >= 2): step = -abs(step)
-    speed += step
-    time.sleep(0.1)
+
+    time.sleep(0.5)
 
