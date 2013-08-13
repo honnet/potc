@@ -15,7 +15,8 @@ import glob
 #################################### init ####################################
 # first in first out file in which the playback speed is requested
 fifo_file = "/tmp/mplayer.fifo"
-logfile = "logfile"
+logfile = "log.txt"
+out = open(logfile, 'w')
 
 if not os.path.exists(fifo_file):
     os.mkfifo(fifo_file)
@@ -57,21 +58,24 @@ while True:
     if cmd == 'B':
         print "beginning..."
         speed = 0.0             # wait to get the speed
-        # TODO: log time
+        timestamp = time.strftime('%b %d %Y %H:%M:%S',time.localtime())
+        out.write("B: " + timestamp + '\n')
 
     elif cmd == 'E':
         print "ending..."
         fade_out == True        # will stop when
-        # TODO: log time
+        timestamp = time.strftime('%b %d %Y %H:%M:%S',time.localtime())
+        out.write("E: " + timestamp + '\n')
 
     elif cmd == 'V':
         print "voltage = " + rx[1:]
-        # TODO: log voltage
+        out.write("V: " + rx[1:] + '\n')
 
     elif cmd == 'H':
         speed = int(rx[1:]) / avg_heartbeat
         print "speed = " + speed
         os.system("echo speed_set " + str(speed) + " > " + fifo_file)
+        out.write("H: " + rx[1:] + '\n')
 
     else:
         break
@@ -91,7 +95,7 @@ while True:
         else:
             os.system("echo quit > " + fifo_file)
             fade_out == False
-
+            volume = 100
 
     time.sleep(0.25)
 
