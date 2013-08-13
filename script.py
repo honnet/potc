@@ -4,16 +4,17 @@ import sys
 import time
 import signal
 import serial
+import random
+import glob
 
 """ TODO:
-- pseudo random music selection
+- adapt to real sound folder name
 - replace os.system by write(fifo)
 - write voltages & timestamp in log file
 """
 #################################### init ####################################
 # first in first out file in which the playback speed is requested
 fifo_file = "/tmp/mplayer.fifo"
-sound = sys.argv[1] # TODO generate name
 logfile = "logfile"
 
 if not os.path.exists(fifo_file):
@@ -29,6 +30,10 @@ def signal_handler(signal, frame):
 # assume that there is only 1 arduino connected:
 ser = serial.Serial('/dev/ttyACM0', 9600);
 ser.isOpen()
+
+SOUND_ROOT  = "sounds" # TODO: adapt to real folder name
+SLOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'slow/*') )
+FAST_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'fast/*') )
 
 #################################### loop ####################################
 avg_heartbeat = 100.0
@@ -73,7 +78,10 @@ while True:
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     if speed > 0.5:
-        # TODO: call function to select sound
+        if speed < 1:
+            sound = random.choice(SLOW_SOUNDS)
+        else:
+            sound = random.choice(FAST_SOUNDS)
         os.system(play_command + sound + "&")
 
     if fade_out == True:
