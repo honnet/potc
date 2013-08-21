@@ -1,32 +1,28 @@
 bool led = 0;
-//float oldValue = 0;
-//const float COEF = 0.9;
-
 int sensorValue = 70;
-int delta = 10;
+int delta = 5;
 
 void setup() {
-  pinMode(13, OUTPUT);
+  pinMode(11, OUTPUT);
   Serial.begin(9600);
 
+  delay(2000);
   Serial.println("B");
 }
 
 void loop() {
-//  float sensorValue = analogRead(A1);
-//  sensorValue = sensorValue * COEF + oldValue * (1-COEF);
-  if (sensorValue>130 || sensorValue<70) {
-    delta = -delta;
-    Serial.println("E");
-    Serial.println("V12");
-    delay(2000);
-    Serial.println("B");
-  }
-
   sensorValue += delta;
   Serial.print("H");
   Serial.println(sensorValue);
 
-  digitalWrite(13, led = !led);
-  delay(1000);
+  if (sensorValue>130 || sensorValue<70) {
+    delta = -delta;
+    Serial.println("V12");
+    Serial.println("E");
+    delay(2000);
+    Serial.println("B");
+  }
+
+  digitalWrite(11, led = !led);
+  delay(500);
 }
