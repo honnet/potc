@@ -35,6 +35,7 @@ except:
 ################################# funktions ##################################
 # start the sound and listen to speed modulation requests
 def play(speed):
+    quit() # kill a potential survivor
     if speed < 0.5 or speed > 2.6:
         return False
     elif speed < 1:
