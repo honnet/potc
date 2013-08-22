@@ -16,18 +16,15 @@ import glob
 SOUND_ROOT  = "sounds" # TODO: adapt to real folder name
 SLOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'slow/*') )
 FAST_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'fast/*') )
+MAX_VOL = 256
 
 # in this file we'll log time stamps, voltages and heartbeats:
 logfile = "log.txt"
 out = open(logfile, 'w')
 
-# first in first out file in which the playback speed is requested
-fifo_file = "/tmp/mplayer.fifo"
-
-# create a fresh FIFO file:
-if os.path.exists(fifo_file):
-    os.remove(fifo_file)
-os.mkfifo(fifo_file)
+# where the playback speed is requested
+host = "localhost"
+port = "3333"
 
 # open serial port to listen to the arduino:
 try:
@@ -45,39 +42,47 @@ def play(speed):
     else: #speed < 2.6:
         sound = random.choice(FAST_SOUNDS)
 
-    command = "mplayer -af scaletempo -slave -input file="
-    command = command + fifo_file + " " + sound + "&"
+    command = "cvlc --extraintf rc --rc-host "
+    command = command + host + ":" + port + " " + sound + "&"
+    print command
     os.system(command)
 
-    set_volume(100)
+    set_volume(MAX_VOL)
     set_speed(speed)
     return True
 
 # playback volume modulation request:
 def set_volume(volume):
-    command = "echo volume " + str(volume) + " 1 > " + fifo_file + "&"
+    command = "echo volume " + str(volume) + " | telnet " + host + " " + port + "&"
+    print command
     os.system(command)
 
 # playback speed modulation request:
 def set_speed(speed):
-    command = "echo speed_set " + str(speed) + " > " + fifo_file
-    os.system(command )
+    command = "echo rate " + str(speed) + " | telnet " + host + " " + port + "&"
+    print command
+    os.system(command)
+
+# quit the player
+def quit():
+    command = "killall vlc"
+    print command
+    print os.system(command)
 
 # decrease the volume at the end of a track:
 def fade_out():
-    duration = 1.5 # sec
-    steps = 5    # percentage
-    for volume in range(100, 0, -steps):
+    duration = 1.0 # sec, need a float!
+    step = 8
+    for volume in range(MAX_VOL, 0, -step):
         set_volume(volume)
-        time.sleep(duration * steps / 100.0)
-    os.system("echo 'quit' > " + fifo_file)
-    os.system("echo volume 100 1 > " + fifo_file + "&")
+        time.sleep(duration * step / MAX_VOL)
+    set_volume(MAX_VOL)
+    quit()
     return False # = not playing anymore
 
 # allow a clean exit using ctrl+c
 def signal_handler(signal, frame):
-    os.system("echo quit > " + fifo_file)
-    os.remove(fifo_file)
+    quit()
     sys.exit(0)
 
 # wait for the Begin instruction:
@@ -85,6 +90,7 @@ def wait_to_begin():
     cmd = ""
     while cmd != 'B':
         rx = ser.readline()
+        print " *** RX:", rx[:-1] # remove the final '\n'
         cmd = rx[0]
     return cmd
 
