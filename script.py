@@ -27,9 +27,7 @@ fifo_file = "/tmp/mplayer.fifo"
 # create a fresh FIFO file:
 if os.path.exists(fifo_file):
     os.remove(fifo_file)
-    print "old FIFO removed"
 os.mkfifo(fifo_file)
-print "FIFO created"
 
 # open serial port to listen to the arduino:
 try:
@@ -49,9 +47,8 @@ def play(speed):
 
     command = "mplayer -af scaletempo -slave -input file="
     command = command + fifo_file + " " + sound + "&"
-    print "***", command
-
     os.system(command)
+
     set_volume(100)
     set_speed(speed)
     return True
@@ -59,13 +56,11 @@ def play(speed):
 # playback volume modulation request:
 def set_volume(volume):
     command = "echo volume " + str(volume) + " 1 > " + fifo_file + "&"
-    print "***", command
     os.system(command)
 
 # playback speed modulation request:
 def set_speed(speed):
     command = "echo speed_set " + str(speed) + " > " + fifo_file
-    print "***", command
     os.system(command )
 
 # decrease the volume at the end of a track:
@@ -90,9 +85,7 @@ def wait_to_begin():
     cmd = ""
     while cmd != 'B':
         rx = ser.readline()
-        print "...waiting: RX:", rx[:-1] # remove the final '\n'
         cmd = rx[0]
-    print "Starting !"
     return cmd
 
 # to write in logfile
@@ -108,7 +101,7 @@ prev_cmd = wait_to_begin()
 
 while True:
     rx = ser.readline()
-    print "*** RX:", rx[:-1] # remove the final '\n'
+    print " *** RX:", rx[:-1] # remove the final '\n'
 
     if not rx:
         continue
@@ -122,17 +115,14 @@ while True:
     # E => voltage too !
 
     if cmd == 'B':
-        print "*** beginning..."
         out.write("B: " + get_timestamp())
 
     elif cmd == 'E':
-        print "*** ending..."
         out.write("E: " + get_timestamp())
         if isPlaying:
             isPlaying = fade_out()
 
     elif cmd == 'V':
-        print "*** voltage =", rx[1:]
         out.write("V: " + rx[1:])
 
     elif cmd == 'H':
@@ -141,13 +131,10 @@ while True:
             speed = int(rx[1:]) / avg_heartbeat
         except:
             continue
-        print "*** speed =", speed
 
         if prev_cmd == 'B':
-            print "*** prev_cmd = 'B'"
             isPlaying = play(speed)
         else:
-            print "*** prev_cmd =", prev_cmd
             set_speed(speed)
 
     else:
