@@ -7,15 +7,16 @@ import random
 import glob
 
 """ TODO:
-- adapt to real sound folder name
 - make the serial choice more generic !!
 """
 
 #################################### init ####################################
 # sound files:
-SOUND_ROOT  = "sounds" # TODO: adapt to real folder name
-SLOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'slow/*') )
-FAST_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'fast/*') )
+SOUND_ROOT = os.environ['HOME'] + "/POTC_music/songs/"
+LOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'low/*') )
+MIDLOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'midlow/*') )
+MIDHIGH_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'midhigh/*') )
+HIGH_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'high/*') )
 MAX_VOL = 100
 
 # in this file we'll log time stamps, voltages and heartbeats:
@@ -40,12 +41,16 @@ except:
 # start the sound and listen to speed modulation requests
 def play(speed):
     quit() # kill a potential survivor
-    if speed < 0.5 or speed > 2.6:
+    if speed < 0.5 or speed > 2.5:
         return False
     elif speed < 1:
-        sound = random.choice(SLOW_SOUNDS)
-    else: #speed < 2.6:
-        sound = random.choice(FAST_SOUNDS)
+        sound = random.choice(LOW_SOUNDS)
+    elif speed < 1.5:
+        sound = random.choice(MIDLOW_SOUNDS)
+    elif speed < 2:
+        sound = random.choice(MIDHIGH_SOUNDS)
+    else: #speed < 2.5:
+        sound = random.choice(HIGH_SOUNDS)
 
     command = "mplayer -af scaletempo -slave -input file="
     command = command + fifo_file + " " + sound + "&"
@@ -67,7 +72,7 @@ def set_speed(speed):
 
 # quit the player
 def quit():
-    command = "echo quit > " + fifo_file
+    command = "killall mplayer"
     print os.system(command)
 
 # decrease the volume at the end of a track:
@@ -101,7 +106,6 @@ def get_timestamp():
 
 #################################### loop ####################################
 avg_heartbeat = 100.0
-speed = 0.0
 isPlaying = False
 
 prev_cmd = wait_to_begin()
@@ -116,10 +120,6 @@ while True:
     # B/E: begin/end timestamp
     # V: voltage
     # H: heartbeat
-
-    # SUGGESTION:
-    # B => new speed too
-    # E => voltage too !
 
     if cmd == 'B':
         out.write("B: " + get_timestamp())
