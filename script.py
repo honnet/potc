@@ -6,10 +6,6 @@ import serial
 import random
 import glob
 
-""" TODO:
-- make the serial choice more generic !!
-"""
-
 #################################### init ####################################
 # sound files:
 SOUND_ROOT = os.environ['HOME'] + "/POTC_music/songs/"
@@ -39,40 +35,48 @@ except:
 
 ################################# funktions ##################################
 # start the sound and listen to speed modulation requests
-def play(speed):
+def play(heart_bpm):
     quit() # kill a potential survivor
-    if speed < 0.5 or speed > 2.5:
+    if heart_bpm < 50 or heart_bpm > 200:
         return False
-    elif speed < 1:
-        sound = random.choice(LOW_SOUNDS)
-    elif speed < 1.5:
-        sound = random.choice(MIDLOW_SOUNDS)
-    elif speed < 2:
-        sound = random.choice(MIDHIGH_SOUNDS)
-    else: #speed < 2.5:
-        sound = random.choice(HIGH_SOUNDS)
+    elif heart_bpm < 100:
+        sound_path = random.choice(LOW_SOUNDS)
+    elif heart_bpm < 120:
+        sound_path = random.choice(MIDLOW_SOUNDS)
+    elif heart_bpm < 140:
+        sound_path = random.choice(MIDHIGH_SOUNDS)
+    else: #heart_bpm < 200:
+        sound_path = random.choice(HIGH_SOUNDS)
 
     command = "mplayer -af scaletempo -slave -input file="
-    command = command + fifo_file + " " + sound + "&"
+    command = command + fifo_file + " " + sound_path + "&"
+    print command
     os.system(command)
-
     set_volume(MAX_VOL)
-    set_speed(speed)
-    return True
+
+    sound_file = os.path.basename(sound_path)
+    try:
+        track_bpm = float(sound_file[:3])
+        return track_bpm
+    except:
+        return 0
 
 # playback volume modulation request:
 def set_volume(volume):
     command = "echo volume " + str(volume) + " 1 > " + fifo_file + "&"
+    print command
     os.system(command)
 
 # playback speed modulation request:
 def set_speed(speed):
     command = "echo speed_set " + str(speed) + " > " + fifo_file
+    print command
     os.system(command)
 
 # quit the player
 def quit():
     command = "killall mplayer"
+    print command
     print os.system(command)
 
 # decrease the volume at the end of a track:
@@ -84,7 +88,7 @@ def fade_out():
         time.sleep(duration * step / MAX_VOL)
     set_volume(MAX_VOL)
     quit()
-    return False # = not playing anymore
+    return 0 # not playing anymore
 
 # allow a clean exit using ctrl+c
 def signal_handler(signal, frame):
@@ -105,9 +109,7 @@ def get_timestamp():
     return time.strftime('%b %d %Y %H:%M:%S',time.localtime()) + '\n'
 
 #################################### loop ####################################
-avg_heartbeat = 100.0
-isPlaying = False
-
+track_bpm = 0
 prev_cmd = wait_to_begin()
 
 while True:
@@ -126,8 +128,8 @@ while True:
 
     elif cmd == 'E':
         out.write("E: " + get_timestamp())
-        if isPlaying:
-            isPlaying = fade_out()
+        if track_bpm != 0:
+            track_bpm = fade_out()
 
     elif cmd == 'V':
         out.write("V: " + rx[1:])
@@ -135,14 +137,13 @@ while True:
     elif cmd == 'H':
         out.write("H: " + rx[1:])
         try:
-            speed = int(rx[1:]) / avg_heartbeat
+            heart_bpm = float(rx[1:])
         except:
             continue
-
         if prev_cmd == 'B':
-            isPlaying = play(speed)
-        else:
-            set_speed(speed)
+            track_bpm = play(heart_bpm)
+        if track_bpm != 0:
+            set_speed(heart_bpm / track_bpm)
 
     else:
         continue
