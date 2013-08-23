@@ -16,15 +16,19 @@ import glob
 SOUND_ROOT  = "sounds" # TODO: adapt to real folder name
 SLOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'slow/*') )
 FAST_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'fast/*') )
-MAX_VOL = 256
+MAX_VOL = 100
 
 # in this file we'll log time stamps, voltages and heartbeats:
 logfile = "log.txt"
 out = open(logfile, 'w')
 
-# where the playback speed is requested
-host = "localhost"
-port = "3333"
+# first in first out file in which the playback speed is requested
+fifo_file = "/tmp/mplayer.fifo"
+
+# create a fresh FIFO file:
+if os.path.exists(fifo_file):
+    os.remove(fifo_file)
+os.mkfifo(fifo_file)
 
 # open serial port to listen to the arduino:
 try:
@@ -43,9 +47,8 @@ def play(speed):
     else: #speed < 2.6:
         sound = random.choice(FAST_SOUNDS)
 
-    command = "cvlc --extraintf rc --rc-host "
-    command = command + host + ":" + port + " " + sound + "&"
-    print command
+    command = "mplayer -af scaletempo -slave -input file="
+    command = command + fifo_file + " " + sound + "&"
     os.system(command)
 
     set_volume(MAX_VOL)
@@ -54,26 +57,23 @@ def play(speed):
 
 # playback volume modulation request:
 def set_volume(volume):
-    command = "echo volume " + str(volume) + " | telnet " + host + " " + port + "&"
-    print command
+    command = "echo volume " + str(volume) + " 1 > " + fifo_file + "&"
     os.system(command)
 
 # playback speed modulation request:
 def set_speed(speed):
-    command = "echo rate " + str(speed) + " | telnet " + host + " " + port + "&"
-    print command
+    command = "echo speed_set " + str(speed) + " > " + fifo_file
     os.system(command)
 
 # quit the player
 def quit():
-    command = "killall vlc"
-    print command
+    command = "echo quit > " + fifo_file
     print os.system(command)
 
 # decrease the volume at the end of a track:
 def fade_out():
     duration = 1.0 # sec, need a float!
-    step = 8
+    step = 5
     for volume in range(MAX_VOL, 0, -step):
         set_volume(volume)
         time.sleep(duration * step / MAX_VOL)
