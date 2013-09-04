@@ -63,15 +63,20 @@ def play(heart_bpm):
 
 # playback volume modulation request:
 def set_volume(volume):
-    command = "echo volume " + str(volume) + " 1 > " + fifo_file + "&"
-    print command
-    os.system(command)
+    procTrue = checkProc()
+    if procTrue > 0:
+        command = "echo volume " + str(volume) + " 1 > " + fifo_file
+
+        print command
+        os.system(command)
 
 # playback speed modulation request:
 def set_speed(speed):
-    command = "echo speed_set " + str(speed) + " > " + fifo_file
-    print command
-    os.system(command)
+    procTrue = checkProc()
+    if procTrue > 0:
+        command = "echo speed_set " + str(speed) + " > " + fifo_file
+        print command
+        os.system(command)
 
 # quit the player
 def quit():
@@ -107,6 +112,13 @@ def wait_to_begin():
 # to write in logfile
 def get_timestamp():
     return time.strftime('%b %d %Y %H:%M:%S',time.localtime()) + '\n'
+
+# check if mplayer is still running
+def checkProc():
+    processname = 'mplayer'
+    tmp = os.popen("ps -Af").read()
+    proccount = tmp.count(processname)
+    return proccount
 
 #################################### loop ####################################
 track_bpm = 0
