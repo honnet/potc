@@ -9,6 +9,7 @@ import glob
 #################################### init ####################################
 # sound files:
 SOUND_ROOT = os.environ['HOME'] + "/POTC_music/songs/"
+ZENLOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'zenlow/*') )
 LOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'low/*') )
 MIDLOW_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'midlow/*') )
 MIDHIGH_SOUNDS = glob.glob( os.path.join(SOUND_ROOT, 'midhigh/*') )
@@ -39,11 +40,13 @@ def play(heart_bpm):
     quit() # kill a potential survivor
     if heart_bpm < 50 or heart_bpm > 200:
         return False
-    elif heart_bpm < 100:
+    elif heart_bpm < 60:
+        sound_path = random.choice(ZENLOW_SOUNDS)
+    elif heart_bpm < 90:
         sound_path = random.choice(LOW_SOUNDS)
     elif heart_bpm < 120:
         sound_path = random.choice(MIDLOW_SOUNDS)
-    elif heart_bpm < 140:
+    elif heart_bpm < 150:
         sound_path = random.choice(MIDHIGH_SOUNDS)
     else: #heart_bpm < 200:
         sound_path = random.choice(HIGH_SOUNDS)
