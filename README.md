@@ -1,8 +1,14 @@
-Welcome to the "Pulse Of The City" repository !
-=============================================
+Welcome!
+========
 
-This art installation consist of the following:
- - We measure the heart beat of a passer-by, who is notified with LEDs strips.
- - The measured value controls the playback speed of pseudo-randomly selected music tracks.
+The "Pulse Of The City" is an art installation that was in SF, CA and Boston, MA, it consists of the following:
+ - We measure the heart beat of a passer-by
+ - We notify the  with LEDs strips.
+ - The measured heart beat value controls the playback speed of pseudo-randomly selected music tracks.
 
-...
+More info here:
+
+www.grayarea.org/urban-prototypings-pulse-of-the-city
+
+Enjoy !
+
